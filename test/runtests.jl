@@ -4,16 +4,15 @@ using Dates
 using BusinessDays
 
 dt = Date(2020,9,1)
-
+@info "Lendo IMAs em $dt"
 resumo = ANBIMA.read_IMA(dt)
-@info "IMA $dt"
 for (k,v) in resumo.elements
     println("$k: $(v.index)")
 end
 
-dt = BusinessDays.advancebdays(:BRSettlement, Dates.today(), -1)
+dt = BusinessDays.advancebdays(:BRSettlement, Dates.today(), -2)
+@info "Lendo IDAs em $dt"
 resumo = ANBIMA.read_IDA(dt)
-@info "IDA $dt"
 for (k,v) in resumo.elements
     println("$k: $(v.index)")
 end
