@@ -28,6 +28,9 @@ function read_IDA(dt::Date)
 
     response_body = String(r.body)
     out = _parse_ida_result(response_body)
+    for (k, ida) in out.elements
+        @assert ida.date == dt "Invalid date for $(k): expected $(dt) got $(ida.date)"
+    end
     return out
 
 end

@@ -40,6 +40,9 @@ function read_IMA(dt::Date)
 
     response_body = String(r.body)
     out = _parse_ima_result(response_body)
+    for (k, ima) in out.elements
+        @assert ima.date == dt "Invalid date for $(k): expected $(dt) got $(ima.date)"
+    end
     return out
 
 end
