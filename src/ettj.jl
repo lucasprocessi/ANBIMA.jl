@@ -18,9 +18,15 @@ function read_ettj(dt::Date)
 	r = HTTP.post(url, header, body)
 
     response_body = String(r.body)
+    @assert _has_data_ettj(response_body) "no ETTJ data for date $dt"
     filedate, out = _parse_ettj_result(response_body)
     @assert dt == filedate "Wrong date: expected $dt, got $filedate"
     return out
+end
+
+function _has_data_ettj(str::String)
+	out = split(str, "\r\n")
+	return length(out) >= 3
 end
 
 function _parse_ettj_result(str::String)

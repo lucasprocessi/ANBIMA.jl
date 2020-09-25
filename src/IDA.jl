@@ -27,6 +27,7 @@ function read_IDA(dt::Date)
     r = HTTP.post(url, header, body)
 
     response_body = String(r.body)
+    @assert _has_data_ida(response_body) "no IDA data for date $dt"
     out = _parse_ida_result(response_body)
     for (k, ida) in out.elements
         @assert ida.date == dt "Invalid date for $(k): expected $(dt) got $(ida.date)"
@@ -35,11 +36,13 @@ function read_IDA(dt::Date)
 
 end
 
+function _has_data_ida(s::String)
+    lines = split(s, "\r\n")
+    return length(lines) > 3
+end
+
 function _parse_ida_result(s::String)
     lines = split(s, "\r\n")
-    if length(lines) <= 3
-        error("nao ha dados de quadro resumo")
-    end
     v_elements = Vector{IDA}()
     for line in lines[4:(end-1)]
         vals = split(line, ";")

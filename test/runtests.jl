@@ -2,6 +2,7 @@
 using ANBIMA
 using Dates
 using BusinessDays
+using Test
 
 dt = Date(2020,9,1)
 @info "Lendo IMAs em $dt"
@@ -10,12 +11,15 @@ for (k,v) in resumo.elements
     println("  $k: $(v.index)")
 end
 
+
 dt = BusinessDays.advancebdays(:BRSettlement, Dates.today(), -2)
 @info "Lendo IDAs em $dt"
 resumo = ANBIMA.read_IDA(dt)
 for (k,v) in resumo.elements
     println("  $k: $(v.index)")
 end
+dt_old = Date(2020,9,1)
+@test_throws AssertionError ANBIMA.read_IDA(dt_old)
 
 @info "LENDO ETTJs em $dt"
 dados = ANBIMA.read_ettj(dt)
@@ -29,3 +33,4 @@ for (k,v) in dados
 		println("    $t: $r")
 	end
 end
+@test_throws AssertionError ANBIMA.read_ettj(dt_old)
