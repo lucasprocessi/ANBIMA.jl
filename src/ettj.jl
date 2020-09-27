@@ -37,15 +37,6 @@ function _parse_ettj_result(str::String)
 	return date, Dict([cvpre, cvipca])
 end
 
-struct SvenssonCurve
-	β1::Float64
-	β2::Float64
-	β3::Float64
-	β4::Float64
-	λ1::Float64
-	λ2::Float64
-end
-
 function _parse_ettj_date(line::String)::Date
 	s = split(line, ";")
 	return Date(String(s[1]), "dd/mm/yyyy")
@@ -64,21 +55,4 @@ function _parse_ettj_parameters(line::String)::Pair{String, SvenssonCurve}
 		parse_value(Float64, s[7])
 	)
 	return (name => cv)
-end
-
-"Zero rates for a SvenssonCurve. `t` in business days. Returns 0.1 for a 10% p.a. rate."
-function zerorate(cv::SvenssonCurve, t::Int64)::Float64
-	β1 = cv.β1
-	β2 = cv.β2
-	β3 = cv.β3
-	β4 = cv.β4
-	λ1 = cv.λ1
-	λ2 = cv.λ2
-	τ = t/252
-	return (
-		β1 +
-		β2 *  (1-exp(-λ1*τ)) / (λ1*τ) +
-		β3 * ((1-exp(-λ1*τ)) / (λ1*τ) - exp(-λ1*τ)) +
-		β4 * ((1-exp(-λ2*τ)) / (λ2*τ) - exp(-λ2*τ))
-	)
 end

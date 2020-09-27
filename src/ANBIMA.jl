@@ -8,6 +8,7 @@ include("types.jl")
 include("IMA.jl")
 include("IDA.jl")
 include("ettj.jl")
+include("credit_spread.jl")
 
 function parse_value(T::Type, x::String)
     if x == "--"
