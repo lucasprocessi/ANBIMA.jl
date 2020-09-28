@@ -72,18 +72,18 @@ end
 
 function calibrate_credit_spread_curves(dt::Date)
 	data = read_credit_spread_data(dt)
-	return [k => _do_calibrate(v) for (k,v) in data]
+	return Dict([k => _do_calibrate(v) for (k,v) in data])
 end
 
 function _do_calibrate(d::Vector{Pair{Float64,Float64}}; best_of=3)
-	v_taus = [Int64(round(252*first(x))) for x in d]
+	v_taus = [Int64(round(252*first(x))) for x in d] # convert to bdays
 	v_rates = [last(x) for x in d]
 
 	function get_curve(x)
 		@assert length(x) == 3
 		β1 = x[1]
 		β2 = x[2]
-		β3 = 0.0
+		β3 = 0.0  # no curvature
 		λ = x[3]
 		cv = NelsonSiegelCurve(β1, β2, β3, λ)
 		return cv
