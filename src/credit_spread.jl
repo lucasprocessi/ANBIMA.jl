@@ -1,5 +1,5 @@
 
-function read_credit_spread_curves(dt::Date)
+function read_credit_spread_data(dt::Date)
 
 	url = "https://www.anbima.com.br/informacoes/curvas-debentures/CD-down.asp"
 	headers = [
@@ -68,4 +68,80 @@ function _parse_credit_curve_rates(str::String)
 		"AA" =>  [k => v/100 for (k,v) in zip(vertices, rate_aa)]
 		"A" =>   [k => v/100 for (k,v) in zip(vertices, rate_a)]
 	])
+end
+
+function calibrate_credit_spread_curves(dt::Date)
+	data = read_credit_spread_data(dt)
+	return [k => _do_calibrate(v) for (k,v) in data]
+end
+
+function _do_calibrate(d::Vector{Pair{Float64,Float64}}; best_of=3)
+	v_taus = [Int64(round(252*first(x))) for x in d]
+	v_rates = [last(x) for x in d]
+
+	function get_curve(x)
+		@assert length(x) == 3
+		β1 = x[1]
+		β2 = x[2]
+		β3 = 0.0
+		λ = x[3]
+		cv = NelsonSiegelCurve(β1, β2, β3, λ)
+		return cv
+	end
+
+	function f_optim(x)
+		cv = get_curve(x)
+		model_rates = [zerorate(cv, t) for t in v_taus]
+		return 100*sum((100*model_rates - 100*v_rates).^2)
+	end
+
+	best_minimum = Inf
+	solution = nothing
+	for i in 1:best_of
+		#@info "Solution $i/$best_of"
+		this_solution = Evolutionary.optimize(
+			f_optim,
+			rand(3),
+			Evolutionary.GA(
+				populationSize = 1000,
+				crossoverRate=0.5,
+				mutationRate=0.5,
+				ɛ=0.1,
+				selection = susinv,
+				crossover = discrete,
+				mutation = domainrange(ones(3))
+			),
+			Evolutionary.Options(
+				show_trace=false,
+				show_every=100)
+		)
+		if Evolutionary.converged(this_solution)
+			this_min = Evolutionary.minimum(this_solution)
+			if this_min < best_minimum
+				#@info "BEST!"
+				best_minimum = this_min
+				solution = this_solution
+			end
+		end
+	end
+
+	if solution == nothing
+		error("could not solve spread curve minimization")
+	end
+	x_optim = Evolutionary.minimizer(solution)
+	curve_optim = get_curve(x_optim)
+
+	# debug
+	# err = Vector{Float64}(undef, length(v_taus))
+	# for i in 1:length(v_taus)
+	# 	tau = v_taus[i]
+	# 	rate = v_rates[i]
+	# 	model_rate = zerorate(curve_optim, tau)
+	# 	err[i] = 100*abs(model_rate - rate)
+	# end
+	# @show maximum(err)
+	# end debug
+
+	return curve_optim
+
 end

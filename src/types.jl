@@ -89,3 +89,23 @@ function zerorate(cv::SvenssonCurve, t::Int64)::Float64
         β4 * ((1-exp(-λ2*τ)) / (λ2*τ) - exp(-λ2*τ))
     )
 end
+
+struct NelsonSiegelCurve
+    β1::Float64
+    β2::Float64
+    β3::Float64
+    λ::Float64
+end
+
+function zerorate(cv::NelsonSiegelCurve, t::Int64)::Float64
+    β1 = cv.β1
+    β2 = cv.β2
+    β3 = cv.β3
+    λ = cv.λ
+    τ = t/252
+    return (
+        β1 +
+        β2 *  (1-exp(-λ*τ)) / (λ*τ) +
+        β3 * ((1-exp(-λ*τ)) / (λ*τ) - exp(-λ*τ))
+    )
+end

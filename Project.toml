@@ -6,5 +6,6 @@ version = "0.1.0"
 [deps]
 BusinessDays = "4f18b42c-503e-5345-9536-bb0f25fc7038"
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
+Evolutionary = "86b6b26d-c046-49b6-aa0b-5f0f74682bd6"
 HTTP = "cd3eb016-35fb-5094-929b-558a96fad6f3"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"

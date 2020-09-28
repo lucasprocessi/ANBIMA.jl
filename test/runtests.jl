@@ -36,4 +36,8 @@ end
 @test_throws AssertionError ANBIMA.read_ettj(dt_old)
 
 @info "Reading credit spread curves on $dt"
-data = ANBIMA.read_credit_spread_curves(dt)
+data = ANBIMA.read_credit_spread_data(dt)
+curves = ANBIMA.calibrate_credit_spread_curves(dt)
+for (k,v) in curves
+	println("$k => $v")
+end

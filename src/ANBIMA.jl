@@ -3,6 +3,7 @@ module ANBIMA
 using HTTP
 using Dates
 using BusinessDays
+using Evolutionary
 
 include("types.jl")
 include("IMA.jl")
