@@ -72,27 +72,44 @@ end
 
 function calibrate_credit_spread_curves(dt::Date)
 	data = read_credit_spread_data(dt)
-	return Dict([k => _do_calibrate(v) for (k,v) in data])
+	return _do_calibrate(data)
 end
 
-function _do_calibrate(d::Vector{Pair{Float64,Float64}}; best_of=3)
-	v_taus = [Int64(round(252*first(x))) for x in d] # convert to bdays
-	v_rates = [last(x) for x in d]
+function _do_calibrate(d::Dict{String, Vector{Pair{Float64, Float64}}}; best_of=3)
 
-	function get_curve(x)
-		@assert length(x) == 3
-		β1 = x[1]
-		β2 = x[2]
+	taus = Dict{String, Vector{Int64}}()
+	rates = Dict{String, Vector{Float64}}()
+
+	for rating in keys(d)
+		taus[rating] = [Int64(round(252*first(x))) for x in d[rating]]
+		rates[rating] = [last(x) for x in d[rating]]
+	end
+
+	function get_curves(x)
+		@assert length(x) == 5
+		β1_AAA    = x[1]
+		β1_AA     = x[2]
+		β1_A      = x[3]
+		β_credito = x[4]
 		β3 = 0.0  # no curvature
-		λ = x[3]
-		cv = NelsonSiegelCurve(β1, β2, β3, λ)
-		return cv
+		λ_credito = x[5]
+		cvs = Dict([
+			"AAA" => NelsonSiegelCurve(β1_AAA, β_credito, β3, λ_credito)
+			"AA"  => NelsonSiegelCurve(β1_AA , β_credito, β3, λ_credito)
+			"A"   => NelsonSiegelCurve(β1_A  , β_credito, β3, λ_credito)
+		])
+		return cvs
 	end
 
 	function f_optim(x)
-		cv = get_curve(x)
-		model_rates = [zerorate(cv, t) for t in v_taus]
-		return 100*sum((100*model_rates - 100*v_rates).^2)
+		cvs = get_curves(x)
+		out = 0.0
+		for rating in keys(cvs)
+			model_rates = [zerorate(cvs[rating], t) for t in taus[rating]]
+			squared_diff = sum((100*model_rates - 100*rates[rating]).^2)
+			out += squared_diff
+		end
+		return out
 	end
 
 	best_minimum = Inf
@@ -101,7 +118,7 @@ function _do_calibrate(d::Vector{Pair{Float64,Float64}}; best_of=3)
 		#@info "Solution $i/$best_of"
 		this_solution = Evolutionary.optimize(
 			f_optim,
-			rand(3),
+			rand(5),
 			Evolutionary.GA(
 				populationSize = 1000,
 				crossoverRate=0.5,
@@ -109,7 +126,7 @@ function _do_calibrate(d::Vector{Pair{Float64,Float64}}; best_of=3)
 				ɛ=0.1,
 				selection = susinv,
 				crossover = discrete,
-				mutation = domainrange(ones(3))
+				mutation = domainrange(ones(5))
 			),
 			Evolutionary.Options(
 				show_trace=false,
@@ -129,18 +146,7 @@ function _do_calibrate(d::Vector{Pair{Float64,Float64}}; best_of=3)
 		error("could not solve spread curve minimization")
 	end
 	x_optim = Evolutionary.minimizer(solution)
-	curve_optim = get_curve(x_optim)
-
-	# debug
-	# err = Vector{Float64}(undef, length(v_taus))
-	# for i in 1:length(v_taus)
-	# 	tau = v_taus[i]
-	# 	rate = v_rates[i]
-	# 	model_rate = zerorate(curve_optim, tau)
-	# 	err[i] = 100*abs(model_rate - rate)
-	# end
-	# @show maximum(err)
-	# end debug
+	curve_optim = get_curves(x_optim)
 
 	return curve_optim
 
