@@ -4,7 +4,7 @@ using Dates
 using BusinessDays
 using Test
 
-dt = Date(2020,9,1)
+dt = Date(2011,1,3)
 @info "Reading IMAs on $dt"
 data = ANBIMA.read_IMA(dt)
 for (k,v) in data.elements

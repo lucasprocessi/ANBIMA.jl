@@ -12,7 +12,7 @@ include("ettj.jl")
 include("credit_spread.jl")
 
 function parse_value(T::Type, x::String)
-    if x == "--"
+    if x == "--" ||  x == ""
         return nothing
     end
     return parse(T, replace(replace(x, r"\." => ""), r"," => "."))
